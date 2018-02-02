@@ -1,0 +1,91 @@
+{
+  "objects": [
+    {
+      "connectionString": "jdbc:mysql://myipordns:3306",
+      "*password": "naveen",
+      "name": "logsDatabase",
+      "jdbcProperties": "allowMultiQueries=true",
+      "id": "DatabaseId_TAKIr",
+      "type": "JdbcDatabase",
+      "jdbcDriverClass": "com.mysql.jdbc.Driver",
+      "username": "naveen"
+    },
+    {
+      "period": "7 Days",
+      "startDateTime": "2017-01-01T05:59:00",
+      "name": "Every 7 days",
+      "id": "DefaultSchedule",
+      "type": "Schedule",
+      "endDateTime": "2017-09-24T05:59:00"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "pipelineLogUri": "s3://mybucket/datapipelinelogs/",
+      "scheduleType": "cron",
+      "name": "Default",
+      "id": "Default"
+    },
+    {
+      "output": {
+        "ref": "S3DataNodeId_u2e8r"
+      },
+      "input": {
+        "ref": "MySqlDataNodeId_ks4Zo"
+      },
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "scheduleType": "TIMESERIES",
+      "name": "logs2s3",
+      "runsOn": {
+        "ref": "ResourceId_hsRMk"
+      },
+      "id": "CopyActivityId_B50y3",
+      "type": "CopyActivity"
+    },
+    {
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "instanceType": "m1.large",
+      "maxActiveInstances": "2",
+      "name": "EC2-Instance",
+      "actionOnTaskFailure": "terminate",
+      "id": "ResourceId_hsRMk",
+      "type": "Ec2Resource",
+      "terminateAfter": "1 Hour"
+    },
+    {
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "database": {
+        "ref": "DatabaseId_TAKIr"
+      },
+      "scheduleType": "TIMESERIES",
+      "name": "ec2-mysql-instance",
+      "id": "MySqlDataNodeId_ks4Zo",
+      "type": "MySqlDataNode",
+      "table": "logs.activity_log_archive",
+      "selectQuery": "select * from database.tablename where date_time_coloumn >= '#{format(@scheduledStartTime, 'YYYY-MM-dd HH-mm-ss')}' and date_time_coloumn <= '#{format(@scheduledEndTime, 'YYYY-MM-dd HH-mm-ss')}'"
+    },
+    {
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "directoryPath": "s3://mybucket/mydirectory/#{year(@scheduledStartTime)}/#{month(@scheduledStartTime)}/#{day(@scheduledStartTime)}-#{hour(@scheduledStartTime)}-#{minute(@scheduledStartTime)}",
+      "scheduleType": "TIMESERIES",
+      "name": "ActivitylogS3Output",
+      "id": "S3DataNodeId_u2e8r",
+      "type": "S3DataNode"
+    }
+  ],
+  "parameters": []
+}
